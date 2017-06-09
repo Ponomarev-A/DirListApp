@@ -23,42 +23,45 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     public static final int REQUEST_CODE = 10;
     public static final String KEY_DIR = "KEY_DIR";
 
-    private ListView fileList;
-    private TextView noPermissionText;
-    private ArrayAdapter<File> adapter;
+    private ListView filesListView;
+    private TextView noPermissionTextView;
+    private ArrayAdapter<File> filesAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        String path = getIntent().getStringExtra(KEY_DIR);
-        File directory = path != null ?
-                new File(path) :
-                Environment.getRootDirectory();
-
         initViews();
         checkPermission();
 
-        File[] fileList = directory.listFiles();
-        if (fileList != null) {
-            updateFileList(fileList);
+        File directory = getDirectory(getIntent());
+        File[] files = directory.listFiles();
+        if (files != null) {
+            updateFilesList(files);
         }
     }
 
-    private void initViews() {
-        adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1);
-
-        noPermissionText = (TextView) findViewById(R.id.no_permission_text);
-        fileList = (ListView) findViewById(R.id.file_list);
-        fileList.setAdapter(adapter);
-        fileList.setOnItemClickListener(this);
+    private File getDirectory(Intent intent) {
+        String path = intent.getStringExtra(KEY_DIR);
+        return path != null ?
+                new File(path) :
+                Environment.getRootDirectory();
     }
 
-    private void updateFileList(File[] files) {
-        adapter.clear();
-        adapter.addAll(Arrays.asList(files));
-        adapter.notifyDataSetChanged();
+    private void initViews() {
+        filesAdapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1);
+
+        noPermissionTextView = (TextView) findViewById(R.id.no_permission_text);
+
+        filesListView = (ListView) findViewById(R.id.file_list);
+        filesListView.setAdapter(filesAdapter);
+        filesListView.setOnItemClickListener(this);
+    }
+
+    private void updateFilesList(File[] files) {
+        filesAdapter.clear();
+        filesAdapter.addAll(Arrays.asList(files));
     }
 
     private void checkPermission() {
@@ -81,19 +84,19 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
         if (requestCode == REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                showContent(false);
+                showContent(true);
             }
         }
     }
 
     private void showContent(boolean visible) {
-        noPermissionText.setVisibility(!visible ? View.VISIBLE : View.GONE);
-        fileList.setVisibility(visible ? View.VISIBLE : View.GONE);
+        noPermissionTextView.setVisibility(!visible ? View.VISIBLE : View.GONE);
+        filesListView.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        File file = adapter.getItem(position);
+        File file = filesAdapter.getItem(position);
         if (file != null && file.isDirectory()) {
             Intent intent = new Intent(MainActivity.this, MainActivity.class);
             intent.putExtra(KEY_DIR, file.getAbsolutePath());
